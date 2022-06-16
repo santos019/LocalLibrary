@@ -15,7 +15,6 @@ exports.genre_list = function(req, res) {
 };
 
 // Display detail page for a specific Genre.
-// Display detail page for a specific Genre.
 exports.genre_detail = function(req, res, next) {
 
   async.parallel({
@@ -105,15 +104,64 @@ exports.genre_delete_get = function(req, res) {
 
 // Handle Genre delete on POST.
 exports.genre_delete_post = function(req, res) {
-    res.send('NOT IMPLEMENTED: Genre delete POST');
+      
+      Genre.findByIdAndRemove(req.body.genreid, function deleteAuthor(err) {
+        if (err) { return next(err); }
+        // Success - go to author list
+        res.redirect('/catalog/genres')
+    }, function(req, res) {
+      Genre.find()
+      .sort([['name', 'ascending']])
+      .exec(function (err, list_genres) {
+        if (err) { return next(err); }
+        //Successful, so render
+        res.render('genre_list', { title: 'Genre List', genre_list: list_genres });
+      });
+    
+    })
+    
+     
+    
 };
 
 // Display Genre update form on GET.
 exports.genre_update_get = function(req, res) {
-    res.send('NOT IMPLEMENTED: Genre update GET');
+  async.parallel({
+    genre: function(callback) {
+        Genre.findById(req.params.id).exec(callback);
+    },
+    }, function(err, results) {
+        if (err) { return next(err); }
+        if (results.genre==null) { // No results.
+            var err = new Error('genre not found');
+            err.status = 404;
+            return next(err);
+        }
+        // Success.
+        // Mark our selected genres as checked.
+        res.render('genre_form', { title: 'Update Book', genre: results.genre});
+    });
 };
 
 // Handle Genre update on POST.
 exports.genre_update_post = function(req, res) {
-    res.send('NOT IMPLEMENTED: Genre update POST');
+  console.log(req)
+    const genre = new Genre(
+      {
+        name: req.body.name,
+        _id: req.params.id
+      }
+    );
+    Genre.findByIdAndUpdate(req.params.id, genre, {}, function (err,thebook) {
+      if (err) { return next(err); }
+         // Successful - redirect to book detail page.
+         Genre.find()
+  .sort([['name', 'ascending']])
+  .exec(function (err, list_genres) {
+    if (err) { return next(err); }
+    //Successful, so render
+    res.render('genre_list', { title: 'Genre List', genre_list: list_genres });
+  });
+
+      });
 };

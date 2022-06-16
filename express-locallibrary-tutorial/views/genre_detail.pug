@@ -13,6 +13,13 @@ block content
         dt
           a(href=book.url) #{book.title}
         dd #{book.summary}
-
       else
         p This genre has no books
+
+        p Do you really want to delete this genre?
+          form(method='POST' action=genre.url+'/delete')
+            div.form-group
+              input#genreid.form-control(type='hidden',name='genreid', required='true', value=genre._id )
+            button.btn.btn-primary(type='submit') Delete
+    p
+      a(href=genre.url+'/update') Update genre

@@ -4,7 +4,6 @@ var Book = require('../models/book');
 var Author = require('../models/author');
 
 // Display list of all Authors.
-// Display list of all Authors.
 exports.author_list = function(req, res, next) {
 
     Author.find()
@@ -17,8 +16,6 @@ exports.author_list = function(req, res, next) {
   
   };
   
-
-// Display detail page for a specific Author.
 // Display detail page for a specific Author.
 exports.author_detail = function(req, res, next) {
 
@@ -45,13 +42,10 @@ exports.author_detail = function(req, res, next) {
 };
 
 // Display Author create form on GET.
-// Display Author create form on GET.
 exports.author_create_get = function(req, res, next) {
     res.render('author_form', { title: 'Create Author'});
 };
 
-
-// Handle Author create on POST.
 // Handle Author create on POST.
 exports.author_create_post = [
 
@@ -96,9 +90,8 @@ exports.author_create_post = [
 
 
 // Display Author delete form on GET.
-// Display Author delete form on GET.
 exports.author_delete_get = function(req, res, next) {
-
+    console.log(req)
     async.parallel({
         author: function(callback) {
             Author.findById(req.params.id).exec(callback)
@@ -117,8 +110,6 @@ exports.author_delete_get = function(req, res, next) {
 
 };
 
-
-// Handle Author delete on POST.
 // Handle Author delete on POST.
 exports.author_delete_post = function(req, res, next) {
 
@@ -151,10 +142,50 @@ exports.author_delete_post = function(req, res, next) {
 
 // Display Author update form on GET.
 exports.author_update_get = function(req, res) {
-    res.send('NOT IMPLEMENTED: Author update GET');
+
+    async.parallel({
+        author: function(callback) {
+            Author.findById(req.params.id).exec(callback);
+        }
+        }, function(err, results) {
+            if (err) { return next(err); }
+            if (results.author==null) { // No results.
+                var err = new Error('author not found');
+                err.status = 404;
+                return next(err);
+            }
+            let month = results.author.date_of_birth.getMonth() < 9 ? '0' + (results.author.date_of_birth.getMonth()+1) : (results.author.date_of_birth.getMonth()+1);
+            let day = results.author.date_of_birth.getDate() < 9 ? '0' + results.author.date_of_birth.getDate() : results.author.date_of_birth.getDate()
+            const birthDate = results.author.date_of_birth.getFullYear() + '-' + month + '-' + day
+            let deathDate = ''
+            if(results.author.date_of_death) {
+                let dmonth = results.author.date_of_death.getMonth() < 9 ? '0' + (results.author.date_of_death.getMonth()+1) : (results.author.date_of_death.getMonth()+1);
+                let dday = results.author.date_of_death.getDate() < 9 ? '0' + results.author.date_of_death.getDate() : results.author.date_of_death.getDate()
+                deathDate = results.author.date_of_death.getFullYear() + '-' + dmonth + '-' + dday
+            }
+            
+            
+            res.render('author_form', { title: 'Update Author', author: results.author, birthDate: birthDate, deathDate:deathDate });
+        });
 };
 
 // Handle Author update on POST.
 exports.author_update_post = function(req, res) {
-    res.send('NOT IMPLEMENTED: Author update POST');
+    
+        var author = new Author(
+          { first_name: req.body.first_name,
+            family_name: req.body.family_name,
+            date_of_birth: req.body.date_of_birth,
+            date_of_death: req.body.date_of_death,
+            _id:req.params.id //This is required, or a new ID will be assigned!
+           });
+
+            // Data from form is valid. Update the record.
+            Author.findByIdAndUpdate(req.params.id, author, {}, function (err,thebook) {
+                if (err) { return next(err); }
+                   // Successful - redirect to book detail page.
+                   res.redirect(thebook.url);
+                });
+        
+    
 };
